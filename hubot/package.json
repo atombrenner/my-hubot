@@ -2,10 +2,10 @@
   "name": "bot",
   "version": "0.0.0",
   "private": true,
-  "author": "Christian Rodemeyer <crodemeyer@autoscout24.de>",
+  "author": "Your Name <your.name@yourdomain.net>",
   "description": "A simple helpful robot for your Company",
   "dependencies": {
-    "aws-sdk": "^2.0.0", 
+    "aws-sdk": "^2.0.0",
     "hubot": "^2.13.2",
     "hubot-diagnostics": "0.0.1",
     "hubot-google-translate": "^0.2.0",
