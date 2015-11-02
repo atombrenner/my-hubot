@@ -7,6 +7,10 @@
 #   Uncomment the ones you want to try and experiment with.
 #
 #   These are from the scripting documentation: https://github.com/github/hubot/blob/master/docs/scripting.md
+#
+# Commands:
+#   hubot create env <name> - Creates a new mappable environment for the PublicApi
+#   hubot status api - Realtime statistics from the API Gateway
 
 module.exports = (robot) ->
 
@@ -20,7 +24,28 @@ module.exports = (robot) ->
     else
       res.reply "Opening #{doorType} doors"
 
-  # robot.hear /I like pie/i, (res) ->
+  robot.respond /how are you/i, (r) ->
+    r.send "fine"
+
+  robot.respond /create env* (\w*)/i, (r) ->
+    r.send "Start creation of environment" + r.match[1]
+    setTimeout () ->
+      r.send "ec2 instances for " + r.match[1] + " created"
+    , 1500
+    setTimeout () ->
+      r.send "databases for " + r.match[1] + " created"
+    , 4000
+    setTimeout () ->
+      r.send "environment " + r.match[1] + " successfully created"
+    , 4500
+
+  robot.respond /status api/i, (r) ->
+    r.reply "PublicApi statistics for the last 24 hours:"
+    r.reply "12834 successful requests, 341 4xx errors and 27 5xx errors"
+    r.reply "Fastest response in 387ms, slowest response in 45027ms"
+    r.reply "95 percentile: 1188ms, 99percentile 43809ms"
+
+# robot.hear /I like pie/i, (res) ->
   #   res.emote "makes a freshly baked pie"
   #
   # lulz = ['lol', 'rofl', 'lmao']

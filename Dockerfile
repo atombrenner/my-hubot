@@ -12,4 +12,4 @@ WORKDIR /hubot
 COPY hubot /hubot
 
 # And go
-ENTRYPOINT ["/bin/sh", "-c", "cd ~; node get-secrets.js; source ./secrets.sh; env; ./bin/hubot -a slack;"]
+ENTRYPOINT ["/bin/sh", "-c", "cd ~; ./bin/hubot -a slack;"]
