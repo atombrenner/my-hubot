@@ -2,5 +2,7 @@
   "hubot-diagnostics",
   "hubot-google-translate",
   "hubot-http-status",
+  "hubot-thesimpsons",
+  "hubot-shipit",
   "hubot-help"
 ]
