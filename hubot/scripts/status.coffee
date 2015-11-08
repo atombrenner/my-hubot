@@ -2,16 +2,21 @@
 #   Get the status of hetras systems relevant for public api.
 #
 # Commands:
-#   hubot status api [all|http|groups|other] - get statistics for the API Gateway from the last three log files
+#   hubot status [all|other] - get API Gateway statistics from the last three log files
 #
+
 fs = require("fs")
 
 module.exports = (robot) ->
 
-  robot.respond /status api/i, (r) ->
-    r.send fs.readFileSync("/tmp/perflog/info.txt")
-    r.send '```' +
-        fs.readFileSync("/tmp/perflog/status.txt") +
-        fs.readFileSync("/tmp/perflog/durations.txt") +
-        '```'
+  asCode = (f) -> '```\n' + fs.readFileSync(f).toString() + '```'
+  asText = (f) -> fs.readFileSync(f).toString()
+
+  robot.respond /status ?(\w*)?/i, (r) ->
+    option = r.match[1]
+    option = "" unless option?
+    r.send asText("/tmp/perflog/info.txt")
+    r.send asCode("/tmp/perflog/status.txt")
+    r.send asCode("/tmp/perflog/durations.txt") if /^(all)?$/      .test option
+    r.send asCode("/tmp/perflog/others.txt")    if /^(all|oth.*)$/ .test option
 
