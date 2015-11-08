@@ -15,8 +15,8 @@ module.exports = (robot) ->
   robot.respond /status ?(\w*)?/i, (r) ->
     option = r.match[1]
     option = "" unless option?
-    r.send asText("/tmp/perflog/info.txt")
-    r.send asCode("/tmp/perflog/status.txt")
-    r.send asCode("/tmp/perflog/durations.txt") if /^(all)?$/      .test option
-    r.send asCode("/tmp/perflog/others.txt")    if /^(all|oth.*)$/ .test option
+    r.send asText("/tmp/perflog/summary.txt")
+    r.send asCode("/tmp/perflog/status.txt")  if /^(all)?$/      .test option
+    r.send asCode("/tmp/perflog/latency.txt") if /^(all)?$/      .test option
+    r.send asCode("/tmp/perflog/others.txt")  if /^(all|oth.*)$/ .test option
 
