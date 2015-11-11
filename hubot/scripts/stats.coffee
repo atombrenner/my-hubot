@@ -19,7 +19,7 @@ module.exports = (robot) ->
     r.send asCode("/tmp/perflog/status.txt")
     r.send asCode("/tmp/perflog/latency.txt")
 
-  robot.respond /latenc(y|ies) (\d\d\d)$/i, (r) ->
+  robot.respond /latenc(y|ies) (\d\w\w)$/i, (r) ->
     status = r.match[2]
     r.send asText("/tmp/perflog/summary.txt")
     r.send "Latencies for status code #{status}:"
