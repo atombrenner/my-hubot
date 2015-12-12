@@ -2,32 +2,38 @@
 #   Automate environment creation and deployments
 #
 # Commands:
-#   hubot env create <name> - Creates a new mappable environment on Certification
-#   hubot env deploy <name> [branch] - Deploy the lastest code to environment name
-#   hubot env prod-db <name> - restore the latest production DB, can take some minutes
+#   hubot env - list existing environments on Certification
+#   hubot env artifacts - list existing artifacts that could be deployed to environments
+#   hubot env update <env> <branch> - update an environment with the latest artifacts from branch
+#
+
+request = require('request')
+printf = require('printf')
+dateformat = require('dateformat')
 
 module.exports = (robot) ->
 
-  robot.respond /env create ?(\w*)/i, (r) ->
-    name = r.match[1]
-    r.send "Start creation of environment" + name
-    setTimeout () ->
-      r.send "ec2 instances for " + name + " created"
-    , 1500
-    setTimeout () ->
-      r.send "databases for " + name + " created"
-    , 4000
-    setTimeout () ->
-      r.send "*Environment " + name + " not created!*"
-    , 4500
+  COSTS_PER_MONTH = 700 * 0.11   # Volumes
+  COSTS_PER_HOUR = 0.274 + 0.028 + COSTS_PER_MONTH / 30 / 24 # Instance + ELB + Volumes
 
-  robot.respond /env create (\w*)( (\w*))?/i, (r) ->
-    name = r.match[1]
-    branch = r.match[3]
-    branch = "master" unless branch?
-    r.send "No artifacts found for branch " + branch
+  robot.respond /env$/i, (r) ->
+    request 'http://localhost:5000/instances', (error, response, body) ->
+      instances = JSON.parse(body)
+      now = new Date()
+      for i in instances
+        started = new Date(i.Started)
+        i.Started = dateformat(started, "yyyy-mm-dd HH:MM");
+        i.Costs = (now - started) / 1000 / 3600 * COSTS_PER_HOUR
+      widthName = Math.max (i.Name.length for i in instances)...
+      widthType = Math.max (i.Instance.length for i in instances)...
+      title = printf("%-*s %-*s %-16s %4s\n", "Name", widthName, "Type", widthType, "Created", "Costs")
+      sep = "-".repeat(widthName + widthType + 16 + 4 + 4) + "\n"
+      report = (printf("%-*s %-*s %16s %4d$", i.Name, widthName, i.Instance, widthType, i.Started, i.Costs) for i in instances)
+      r.send "```\n" + title + sep + report.join("\n") + "```\n"
 
-  robot.respond /env db|prod-db/i, (r) ->
-    setTimeout () ->
-      r.send "database backup not found"
-    , 1500
+  robot.respond /env a(rtifacts)?$/i, (r) ->
+    request 'http://localhost:5000/artifacts', (error, response, body) ->
+      r.send "```\nArtifacts:\n" + JSON.parse(body).join("\n") + "```\n"
+
+  robot.respond /env u(pdate)? ([^ ]+) ([^ ]+)$/i, (r) ->
+    r.send "ansible-playbook update.yaml #{r.match[2]} #{r.match[3]}"
