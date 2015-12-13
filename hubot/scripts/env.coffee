@@ -41,7 +41,7 @@ module.exports = (robot) ->
       title = printf("%-*s %-*s\n", "Artifact", col0, "Version", col1)
       sep = "-".repeat(col0 + col1 + 1) + "\n"
       artifacts = (printf("%-*s %-*s", a[0], col0, a[1], col1) for a in artifacts).join("\n")
-      r.send "```\nArtifacts:\n" + title + sep + artifacts + "```\n"
+      r.send "```\n" + title + sep + artifacts + "```\n"
 
   robot.respond /env u(pdate)? ([^ ]+) ([^ ]+)$/i, (r) ->
     env = r.match[2]
