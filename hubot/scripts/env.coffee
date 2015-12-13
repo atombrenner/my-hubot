@@ -10,6 +10,7 @@
 request = require('request')
 printf = require('printf')
 dateformat = require('dateformat')
+exec = require('child_process').exec;
 
 module.exports = (robot) ->
 
@@ -36,4 +37,11 @@ module.exports = (robot) ->
       r.send "```\nArtifacts:\n" + JSON.parse(body).join("\n") + "```\n"
 
   robot.respond /env u(pdate)? ([^ ]+) ([^ ]+)$/i, (r) ->
-    r.send "ansible-playbook update.yaml #{r.match[2]} #{r.match[3]}"
+    env = r.match[2]
+    branch = r.match[3]
+    cmd = "ansible-playbook UpdateEnvironment.yaml --extra-vars \"env_name=#{env} branch=#{branch}\""
+    r.send cmd
+    exec cmd + " --list-hosts", (error, stdout, stderr) ->
+      r.send error if error?
+      r.send stdout
+      r.send stderr
