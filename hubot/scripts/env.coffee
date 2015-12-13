@@ -11,6 +11,7 @@ request = require('request')
 printf = require('printf')
 dateformat = require('dateformat')
 exec = require('child_process').exec;
+maxWidth = (items, index) -> Math.max (item[index].length for item in items)...
 
 module.exports = (robot) ->
 
@@ -25,8 +26,8 @@ module.exports = (robot) ->
         started = new Date(i.Started)
         i.Started = dateformat(started, "yyyy-mm-dd HH:MM");
         i.Costs = (now - started) / 1000 / 3600 * COSTS_PER_HOUR
-      widthName = Math.max (i.Name.length for i in instances)...
-      widthType = Math.max (i.Instance.length for i in instances)...
+      widthName = maxWidth(instances, "Name")
+      widthType = maxWidth(instances, "Instance")
       title = printf("%-*s %-*s %-16s %4s\n", "Name", widthName, "Type", widthType, "Created", "Costs")
       sep = "-".repeat(widthName + widthType + 16 + 4 + 4) + "\n"
       report = (printf("%-*s %-*s %16s %4d$", i.Name, widthName, i.Instance, widthType, i.Started, i.Costs) for i in instances)
@@ -34,14 +35,18 @@ module.exports = (robot) ->
 
   robot.respond /env a(rtifacts)?$/i, (r) ->
     request 'http://localhost:5000/artifacts', (error, response, body) ->
-      r.send "```\nArtifacts:\n" + JSON.parse(body).join("\n") + "```\n"
+      artifacts = (a.split('_') for a in JSON.parse(body))
+      col0 = maxWidth(artifacts, 0)
+      col1 = maxWidth(artifacts, 1)
+      artifacts = (printf("%-*s %-*s", a[0], col0, a[1], col1) for a in artifacts).join("\n")
+      r.send "```\nArtifacts:\n" + artifacts + "```\n"
 
   robot.respond /env u(pdate)? ([^ ]+) ([^ ]+)$/i, (r) ->
     env = r.match[2]
     branch = r.match[3]
-    cmd = "ansible-playbook UpdateEnvironment.yaml --extra-vars \"env_name=#{env} branch=#{branch}\""
-    r.send cmd
-    exec cmd + " --list-hosts", (error, stdout, stderr) ->
+    cmd = "ansible-playbook UpdateEnvironment.yaml --extra-vars \"env_name=#{env} branch=#{branch}\" --list-hosts"
+    r.reply cmd
+    exec cmd, (error, stdout, stderr) ->
       r.send error if error?
       r.send stdout
       r.send stderr
