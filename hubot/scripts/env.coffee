@@ -48,7 +48,7 @@ module.exports = (robot) ->
     branch = r.match[3]
     cmd = "ansible-playbook UpdateEnvironment.yaml --extra-vars \"env_name=#{env} branch=#{branch}\""
     r.send cmd
-    exec cmd, {cwd: "/repos/tools/Ansible/Playbooks"} (error, stdout, stderr) ->
+    exec cmd, {cwd: "/repos/tools/Ansible/Playbooks"}, (error, stdout, stderr) ->
       r.reply error if error?
       r.reply stdout
       r.reply stderr
