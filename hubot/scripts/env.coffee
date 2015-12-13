@@ -39,7 +39,7 @@ module.exports = (robot) ->
       col0 = maxWidth(artifacts, 0)
       col1 = maxWidth(artifacts, 1)
       title = printf("%-*s %-*s\n", "Artifact", col0, "Version", col1)
-      sep = "-".repeat(col1 + col2 + 1) + "\n"
+      sep = "-".repeat(col0 + col1 + 1) + "\n"
       artifacts = (printf("%-*s %-*s", a[0], col0, a[1], col1) for a in artifacts).join("\n")
       r.send "```\nArtifacts:\n" + title + sep + artifacts + "```\n"
 
