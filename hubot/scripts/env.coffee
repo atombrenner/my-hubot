@@ -38,15 +38,17 @@ module.exports = (robot) ->
       artifacts = (a.split('_') for a in JSON.parse(body))
       col0 = maxWidth(artifacts, 0)
       col1 = maxWidth(artifacts, 1)
+      title = printf("%-*s %-*s\n", "Artifact", col0, "Version", col1)
+      sep = "-".repeat(col1 + col2 + 1) + "\n"
       artifacts = (printf("%-*s %-*s", a[0], col0, a[1], col1) for a in artifacts).join("\n")
-      r.send "```\nArtifacts:\n" + artifacts + "```\n"
+      r.send "```\nArtifacts:\n" + title + sep + artifacts + "```\n"
 
   robot.respond /env u(pdate)? ([^ ]+) ([^ ]+)$/i, (r) ->
     env = r.match[2]
     branch = r.match[3]
-    cmd = "ansible-playbook UpdateEnvironment.yaml --extra-vars \"env_name=#{env} branch=#{branch}\" --list-hosts"
-    r.reply cmd
-    exec cmd, (error, stdout, stderr) ->
-      r.send error if error?
-      r.send stdout
-      r.send stderr
+    cmd = "ansible-playbook UpdateEnvironment.yaml --extra-vars \"env_name=#{env} branch=#{branch}\""
+    r.send cmd
+    exec cmd, {cwd: "/repos/tools/Ansible/Playbooks"} (error, stdout, stderr) ->
+      r.reply error if error?
+      r.reply stdout
+      r.reply stderr
