@@ -11,6 +11,7 @@ request = require('request')
 printf = require('printf')
 dateformat = require('dateformat')
 exec = require('child_process').exec;
+async = require('async')
 maxWidth = (items, index) -> Math.max (item[index].length for item in items)...
 
 module.exports = (robot) ->
@@ -44,17 +45,32 @@ module.exports = (robot) ->
       r.send "```\n" + title + sep + artifacts + "```\n"
 
   robot.respond /env u(pdate)? ([^ ]+) ([^ ]+)$/i, (r) ->
-    env = r.match[2]
-    version = r.match[3]
-    request 'http://localhost:5000/artifacts', (error, response, body) ->
-       artifacts = JSON.parse(body).filter (x) -> x.startsWith(version)
-       if (artifacts.length == 0)
-         r.reply "Please specify a valid artifact"
-       else if (artifacts.length > 1)
-         r.reply "Which artifact do you want to deploy?\n" + artifacts.join("\n")
-       else
-         cmd = "ansible-playbook UpdateEnvironment.yaml --extra-vars \"env_name=#{env} version=#{artifacts[0]}\""
-         r.send cmd
+    download = (path) -> (callback) -> request "http://localhost:5000/#{path}", (err, res, body) ->
+      callback(null, JSON.parse(body))
+    match = (a, m) ->  a.filter (x) ->
+       x.toUpperCase().startsWith(m.toUpperCase())
+
+    async.parallel [download("environments"), download("artifacts")], (error, result) ->
+      [environments, artifacts] = result
+      matching_environments = match(environments, r.match[2])
+      matching_artifacts = match(artifacts, r.match[3])
+      #if validate(r, matching, "environment") && validate(r, matching, "artifact")
+
+      if (matching_artifacts.length == 0)
+        r.reply "Please specify a valid artifact from this list:\n" + artifacts.join("\n")
+      else if (matching_artifacts.length > 1)
+        r.reply "Which artifact do you mean?\n" + matching_artifacts.join("\n")
+      else if (matching_environments.length == 0)
+        r.reply "Please specify a valid environemnt from this list:\n" + environments.join("\n")
+      else if (matching_environments.length > 1)
+          r.reply "Which environment do you mean?\n" + matching_environments.join("\n")
+      else
+        env = matching_environments[0]
+        art = matching_artifacts[0]
+        cmd = "EXEC ansible-playbook UpdateEnvironment.yaml -e \"env_name=#{env} version=#{art}\""
+        r.send cmd
+        #exec cmd
+
   #  exec cmd, {cwd: "/repos/tools/Ansible/Playbooks"}, (error, stdout, stderr) ->
 #      r.reply error if error?
       #r.reply stdout
