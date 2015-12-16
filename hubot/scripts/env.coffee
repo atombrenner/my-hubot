@@ -36,19 +36,26 @@ module.exports = (robot) ->
   robot.respond /env a(rtifacts)?$/i, (r) ->
     request 'http://localhost:5000/artifacts', (error, response, body) ->
       artifacts = (a.split('_') for a in JSON.parse(body))
-      col0 = maxWidth(artifacts, 0)
-      col1 = maxWidth(artifacts, 1)
-      title = printf("%-*s %-*s\n", "Artifact", col0, "Version", col1)
-      sep = "-".repeat(col0 + col1 + 1) + "\n"
-      artifacts = (printf("%-*s %-*s", a[0], col0, a[1], col1) for a in artifacts).join("\n")
+      w = (maxWidth(artifacts, i) for i in [0..2])
+      w = (Math.max(w[i], title.length) for title, i in ["Artifact", "Version", "Time"])
+      title = printf("%-*s %-*s %-*s\n", "Artifact", w[0], "Version", w[1], "Time", w[2])
+      sep = "-".repeat(w[0] + w[1] + w[2] + w.length) + "\n"
+      artifacts = (printf("%-*s %-*s %-*s", a[0], w[0], a[1], w[1], a[2], w[2]) for a in artifacts).join("\n")
       r.send "```\n" + title + sep + artifacts + "```\n"
 
   robot.respond /env u(pdate)? ([^ ]+) ([^ ]+)$/i, (r) ->
     env = r.match[2]
-    branch = r.match[3]
-    cmd = "ansible-playbook UpdateEnvironment.yaml --extra-vars \"env_name=#{env} branch=#{branch}\""
-    r.send cmd
-    exec cmd, {cwd: "/repos/tools/Ansible/Playbooks"}, (error, stdout, stderr) ->
-      r.reply error if error?
-      r.reply stdout
-      r.reply stderr
+    version = r.match[3]
+    request 'http://localhost:5000/artifacts', (error, response, body) ->
+       artifacts = JSON.parse(body).filter (x) -> x.startsWith(version)
+       if (artifacts.length == 0)
+         r.reply "Please specify a valid artifact"
+       else if (artifacts.length > 1)
+         r.reply "Which artifact do you want to deploy?\n" + artifacts.join("\n")
+       else
+         cmd = "ansible-playbook UpdateEnvironment.yaml --extra-vars \"env_name=#{env} version=#{artifacts[0]}\""
+         r.send cmd
+  #  exec cmd, {cwd: "/repos/tools/Ansible/Playbooks"}, (error, stdout, stderr) ->
+#      r.reply error if error?
+      #r.reply stdout
+      #r.reply stderr
