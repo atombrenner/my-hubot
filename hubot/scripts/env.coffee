@@ -60,7 +60,7 @@ module.exports = (robot) ->
       return null
 
     update = (env, art) ->
-      cmd = "EXEC ansible-playbook UpdateEnvironment.yaml -e \"env_name=#{env} version=#{art}\""
+      cmd = "ansible-playbook UpdateEnvironment.yaml -e \"env_name=#{env} version=#{art}\""
       r.send cmd
       exec cmd, {cwd: "/repos/tools/Ansible/Playbooks"}, (error, stdout, stderr) ->
         r.reply error if error?
