@@ -45,33 +45,30 @@ module.exports = (robot) ->
       r.send "```\n" + title + sep + artifacts + "```\n"
 
   robot.respond /env u(pdate)? ([^ ]+) ([^ ]+)$/i, (r) ->
+
     download = (path) -> (callback) -> request "http://localhost:5000/#{path}", (err, res, body) ->
       callback(null, JSON.parse(body))
-    match = (a, m) ->  a.filter (x) ->
-       x.toUpperCase().startsWith(m.toUpperCase())
+
+    validate = (valid, val, name) ->
+      matching = valid.filter (x) -> x.toUpperCase().startsWith(val.toUpperCase())
+      if (matching.length == 1)
+        return matching[0]
+      else if (matching.length < 1)
+        r.reply "Please specify a valid #{name} from :\n" + valid.join("\n")
+      else if (matching_artifacts.length > 1)
+        r.reply "Which #{name} do you mean?\n" + matching.join("\n")
+      return null
+
+    update = (env, art) ->
+      cmd = "EXEC ansible-playbook UpdateEnvironment.yaml -e \"env_name=#{env} version=#{art}\""
+      r.send cmd
+      exec cmd, {cwd: "/repos/tools/Ansible/Playbooks"}, (error, stdout, stderr) ->
+        r.reply error if error?
+        r.reply stdout
+        r.reply stderr
 
     async.parallel [download("environments"), download("artifacts")], (error, result) ->
       [environments, artifacts] = result
-      matching_environments = match(environments, r.match[2])
-      matching_artifacts = match(artifacts, r.match[3])
-      #if validate(r, matching, "environment") && validate(r, matching, "artifact")
-
-      if (matching_artifacts.length == 0)
-        r.reply "Please specify a valid artifact from this list:\n" + artifacts.join("\n")
-      else if (matching_artifacts.length > 1)
-        r.reply "Which artifact do you mean?\n" + matching_artifacts.join("\n")
-      else if (matching_environments.length == 0)
-        r.reply "Please specify a valid environemnt from this list:\n" + environments.join("\n")
-      else if (matching_environments.length > 1)
-          r.reply "Which environment do you mean?\n" + matching_environments.join("\n")
-      else
-        env = matching_environments[0]
-        art = matching_artifacts[0]
-        cmd = "EXEC ansible-playbook UpdateEnvironment.yaml -e \"env_name=#{env} version=#{art}\""
-        r.send cmd
-        #exec cmd
-
-  #  exec cmd, {cwd: "/repos/tools/Ansible/Playbooks"}, (error, stdout, stderr) ->
-#      r.reply error if error?
-      #r.reply stdout
-      #r.reply stderr
+      env = validate(environments, r.match[2], "environment")
+      art = validate(artifacts, r.match[3], "artifact") if env
+      update(env, art) if env && art
